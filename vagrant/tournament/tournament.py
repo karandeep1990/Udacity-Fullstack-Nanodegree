@@ -10,35 +10,50 @@ def connect():
     """Connect to the PostgreSQL database.  Returns a database connection."""
     return psycopg2.connect("dbname=tournament")
 
+def simpleSqlExecution(sql, params):
+    conn = connect()
+    c = conn.cursor()
+    c.execute(sql, params)
+    my_list = c.fetchall()
+    conn.commit()
+    conn.close()
+    return my_list
+
+def sqlNoReturn(sql, params):
+    conn = connect()
+    c = conn.cursor()
+    c.execute(sql, params)
+    conn.commit()
+    conn.close()
 
 def deleteMatches():
-    """Remove all the match records from the database."""
-
+    """ Delete all rows from matches table, clears table """
+    sql = "DELETE FROM matches"
+    sqlNoReturn(sql, ())
 
 def deletePlayers():
-    """Remove all the player records from the database."""
+    """ Delete all rows from players table, clears table """
+    sql = "DELETE FROM players"
+    sqlNoReturn(sql, ())
 
 
 def countPlayers():
-    """Returns the number of players currently registered."""
+    """ Count total players registered """
+    sql = "SELECT COUNT(*) FROM players"
+    count = simpleSqlExecution(sql, ())[0][0]
+    return count
 
 
 def registerPlayer(name):
-    """Adds a player to the tournament database.
-  
-    The database assigns a unique serial id number for the player.  (This
-    should be handled by your SQL database schema, not in your Python code.)
-  
-    Args:
-      name: the player's full name (need not be unique).
-    """
+    """Adds a player to the tournament database. Name doesnt have to be unique"""
+
+    sql = "INSERT INTO players (name) VALUES (%s)"
+    sqlParams = (name, ) # requires comma for one value inside tuple
+    sqlNoReturn(sql, sqlParams)
 
 
 def playerStandings():
     """Returns a list of the players and their win records, sorted by wins.
-
-    The first entry in the list should be the player in first place, or a player
-    tied for first place if there is currently a tie.
 
     Returns:
       A list of tuples, each of which contains (id, name, wins, matches):
@@ -48,23 +63,44 @@ def playerStandings():
         matches: the number of matches the player has played
     """
 
+    """
+     1) Combine players and matches table (keep players table columns)
+     2) Show player id
+        show player name
+        Count a win for player Id if in winner (grouped by player Id and name)
+        Count all matches (grouped by player Id and name)
+     4) Sort descending by wins
+    """
+
+    sql = ("SELECT players.id as id, name, "
+        "COUNT(CASE players.id WHEN winner THEN 1 ELSE NULL END) AS wins, "
+        "COUNT(matches.id) as matches "
+        "FROM players "
+        "LEFT JOIN matches ON players.id IN (winner, loser) "
+        "GROUP BY players.id, name "
+        "ORDER BY wins DESC")
+
+    conn = connect()
+    c = conn.cursor()
+    c.execute(sql)
+    myPlayers = c.fetchall()
+    conn.commit()
+    conn.close()
+    return myPlayers
 
 def reportMatch(winner, loser):
-    """Records the outcome of a single match between two players.
-
+    """Records the outcome of a single match between two players into the matches table.
+    
     Args:
       winner:  the id number of the player who won
       loser:  the id number of the player who lost
     """
+    sql = "INSERT INTO matches (winner, loser) VALUES (%s, %s)"
+    sqlNoReturn(sql, (winner, loser))
  
  
 def swissPairings():
-    """Returns a list of pairs of players for the next round of a match.
-  
-    Assuming that there are an even number of players registered, each player
-    appears exactly once in the pairings.  Each player is paired with another
-    player with an equal or nearly-equal win record, that is, a player adjacent
-    to him or her in the standings.
+    """Returns a list of pairs of players (in adjanecet standing) for the next round of a match.
   
     Returns:
       A list of tuples, each of which contains (id1, name1, id2, name2)
@@ -73,5 +109,14 @@ def swissPairings():
         id2: the second player's unique id
         name2: the second player's name
     """
+    pairings = []
 
+    standings = playerStandings()
+    standingId = 0
+    while standingId < len(standings):
+        standing1 = standings[standingId]
+        standing2 = standings[standingId+1]
+        pairings.append((standing1[0], standing1[1], standing2[0], standing2[1]))
+        standingId += 2
 
+    return pairings
