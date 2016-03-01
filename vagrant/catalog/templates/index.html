@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block content %}
+	{% if error %}
+		<p class=error><strong>Error:</strong> {{ error }}
+	{% endif %}
+	<div id="categories" class="col-sm-6 col-md-4 panel panel-primary">
+		<h4 class="panel-heading">Categories</h4>
+		<ul class="list-unstyled panel-body">
+			{% for category in categories %}
+				<li class="{% if category.name == selected_category %}selected_item {%endif%}">
+					<a href="/catalog/{{ category.name }}/items">{{ category.name }}</a>
+				</li>
+			{% endfor %}
+		</ul>
+	</div>
+	<div id="items" class="col-sm-6 col-md-8 panel panel-primary">
+		<h4 class="panel-heading">
+			{% if latest_items %}Latest {% else %}{{selected_category}}{% endif %} Items
+			{% if session.logged_in %}
+				<a class="pull-right btn btn-danger btn-xs" href="{{ url_for('route_new_item')}}">Add Item</a>
+			{% endif %}
+		</h4>
+		<ul class="list-unstyled panel-body">
+			{% for item in items %}
+				<li>
+					<a href="/catalog/{{ item.category_name }}/{{ item.name }}">{{ item.name }}</a>
+					{% if latest_items %}
+						<span style="font-style:italic; color: #aaa"> ({{ item.category_name }}) </span>
+					{% endif %}
+				</li>
+			{% endfor %}
+		</ul>
+	</div>
+{% endblock %}
