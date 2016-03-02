@@ -1,0 +1,48 @@
+body{
+	background-color:#eee;
+}
+
+a{
+	text-decoration: none;
+}
+
+#header{
+	background-color: #0B5394;
+	color: #efefef;
+}
+
+#header a{
+	color: #efefef;
+	text-decoration: none;
+}
+
+#header a:visited{
+	color: #efefef;
+}
+
+#content{
+	padding-top: 15px;
+	background-color: #FFF;
+}
+
+span.form-control{
+	height : auto;
+}
+
+.panel{
+	border: none;
+    box-shadow: none;
+}
+
+#categories li{
+	padding: 5px 10px;
+}
+
+.selected_item{
+	background-color: #6AB4EA;
+	color: white;
+}
+
+.selected_item a{
+	color: white;
+}
